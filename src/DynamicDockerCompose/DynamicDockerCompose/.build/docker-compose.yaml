@@ -1,0 +1,22 @@
+﻿version: '3'
+services: 
+  frontend:
+    image: ${COMPOSE_PROJECT_NAME}/frontend:${TAG}
+    build: 
+      context: ${rootAbsolutePath} # set the correct context for the COPY to work
+      dockerfile: ${dockerFilePath}
+      args:  
+        - CSPROJ_PATH=${csprojPath}
+        - SLN_PATH=${slnPath}
+        - SOLUTION_NAME=${solutionName} 
+        - ENTRYPOINT_SCRIPT_PATH=${entrypointScriptPath}
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+    environment:
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_HTTPS_PORT=${HTTPS_PORT}
+      - ASPNETCORE_ENVIRONMENT=${ENV}
+    volumes:
+      - ${APPDATA}\microsoft\UserSecrets\:/root/.microsoft/usersecrets
+      - ${USERPROFILE}\.aspnet\https:/root/.aspnet/https/
