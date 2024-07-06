@@ -165,13 +165,37 @@ function Save-File {
     } 
 }
 
+# Ensures the path will be absolute
+function Use-Absolute-Path {
+    param (
+        [string]$isRelativeFromPath,
+        [string]$path,
+        [switch]$isDirectory    
+    )
+
+if(([System.IO.Path]::IsPathRooted($path)) -and ($isDirectory.IsPresent))
+{
+    # Ensures that the last character on the extraction path is the directory separator char.
+    if(-not $path.EndsWith([System.IO.Path]::DirectorySeparatorChar.ToString(), [StringComparison]::Ordinal)){
+        $path += [System.IO.Path]::DirectorySeparatorChar;
+    }
+    return $path
+}
+else 
+{
+    if ([string]::IsNullOrWhiteSpace($isRelativeFromPath)) {
+        return Resolve-Path $path
+    } 
+    return Resolve-Path -Path (Join-Path -Path $isRelativeFromPath -ChildPath $path)
+}
+}
+
 function Test-NuSpec-Exists {
     param (
         [string]$nuspecFilePath,
         [string]$defaultPath,
         [switch]$verbose
     )
-    Write-Host ".nuspec path: " $nuspecFilePath
     if ([string]::IsNullOrWhiteSpace($nuspecFilePath)) {
         $nuspecPath = Join-Path -Path $rootPath -ChildPath ".\.build\CakeRelease\Package\${nuspec}"
         if (Test-Path $nuspecPath) {
@@ -179,13 +203,14 @@ function Test-NuSpec-Exists {
             if($verbose.IsPresent){ 
             Write-Host ".nuspec path: " $nuspecFilePath
             }
+            return $nuspecFilePath
         }
         else {
             Write-Host "no .nuspec found at path ${nuspecPath}"
             exit 1
         }
     }
-    return $nuspecFilePath
+    return Use-Absolute-Path -path $nuspecFilePath -isRelativeFromPath $cakeReleaseDirectory
 }
 
 # Get csproj path

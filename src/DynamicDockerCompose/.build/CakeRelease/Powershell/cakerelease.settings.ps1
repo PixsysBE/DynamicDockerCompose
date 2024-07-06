@@ -46,7 +46,7 @@ $nuspecFilePath = Test-NuSpec-Exists -nuspecFilePath $nuspecFilePath -defaultPat
 # Git Hooks
 $gitHooksFolder=""
 if(-not $autoBuild.IsPresent){
-	$gitHooksFolder="../"
+	$gitHooksFolder = ".\..\"
 }
-$csprojTargetGitHooksCommitMsgPath = ".build\CakeRelease\Git\Hooks\commit-msg"
+$csprojTargetGitHooksCommitMsgPath = "${gitHooksFolder}.build\CakeRelease\Git\Hooks\commit-msg"
 $csprojTargetGitHooksCommitMsgDestinationFolder = "./../../../.git/hooks"

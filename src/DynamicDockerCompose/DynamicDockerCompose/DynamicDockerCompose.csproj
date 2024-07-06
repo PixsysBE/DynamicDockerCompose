@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -29,13 +29,16 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CakeRelease" Version="1.9.1" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="Tools\init.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
     <ItemGroup>
-      <_CustomFiles Include=".build\CakeRelease\Git\Hooks\commit-msg" />
+      <_CustomFiles Include=".\..\.build\CakeRelease\Git\Hooks\commit-msg" />
     </ItemGroup>
     <Copy SourceFiles="@(_CustomFiles)" DestinationFolder="./../../../.git/hooks" />
   </Target>
