@@ -24,9 +24,7 @@
     <None Include=".build\DynamicDockerCompose\Scripts\entrypoint.sh">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include=".config\docker-dev.env">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <None Include=".config\docker-dev.sample.env" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CakeRelease" Version="1.9.1" />

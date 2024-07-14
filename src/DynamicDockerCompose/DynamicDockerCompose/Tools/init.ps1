@@ -16,55 +16,36 @@ function Copy-New-Item {
 $currentDirectory = Get-Location
 
 ##### .build folder #####
-$overrideFiles = @("\DynamicDockerCompose\dynamic-docker-compose.functions.ps1",
-                   "\DynamicDockerCompose\dynamic-docker-compose.ps1",
-                   "\DynamicDockerCompose\Scripts\entrypoint.sh"
+$overrideFiles = @(".build\DynamicDockerCompose\dynamic-docker-compose.functions.ps1",
+                   ".build\DynamicDockerCompose\dynamic-docker-compose.ps1",
+                   ".build\DynamicDockerCompose\Scripts\entrypoint.sh",
+                   ".config\docker-dev.sample.env"
                   )
 
-$sourceBuildPath = Join-Path -Path $installPath -ChildPath "/.build"
-$targetBuildPath = Join-Path -Path $currentDirectory -ChildPath "/.build"
-$sourceBuildFiles = Get-ChildItem -Path $sourceBuildPath -File -Recurse
-foreach($sourceBuildFile in $sourceBuildFiles)
+# Copy folder files
+$folders = @(".build",".config")
+foreach($folder in $folders)
 {
-    $sourceRelativePath = $sourceBuildFile.FullName.Remove(0,($sourceBuildPath.length))
-    $targetPath = Join-Path -Path $targetBuildPath -ChildPath $sourceRelativePath
-    $exists = Test-Path -Path $targetPath
-    # Write-Host $sourceBuildFile.FullName
-    if($exists -eq $true){
-        if($overrideFiles -contains $sourceRelativePath)
-        {
-            Write-Host "${sourceRelativePath} already exists but will be overriden"  -ForegroundColor Green
-            Copy-Item -Path $sourceBuildFile.FullName -Destination $targetPath -Force
-        } else {
-            Write-Host "${sourceRelativePath} already exists, skipping..."  -ForegroundColor Red -BackgroundColor Yellow
+    $sourcePath = Join-Path -Path $installPath -ChildPath $folder
+    $targetBasePath = Join-Path -Path $currentDirectory -ChildPath $folder
+    $sourceFiles = Get-ChildItem -Path $sourcePath -File -Recurse
+    foreach($sourceFile in $sourceFiles)
+    {
+        $sourceRelativePath = $sourceFile.FullName.Remove(0,($sourcePath.length))
+        $targetPath = Join-Path -Path $targetBasePath -ChildPath $sourceRelativePath
+        # Write-Host $sourceFile.FullName
+        if(Test-Path -Path $targetPath){
+            if($overrideFiles -contains ($folder + $sourceRelativePath))
+            {
+                Write-Host "${sourceRelativePath} already exists but will be overriden"  -ForegroundColor Green
+                Copy-Item -Path $sourceFile.FullName -Destination $targetPath -Force
+            } else {
+                Write-Host "${sourceRelativePath} already exists, skipping..."  -ForegroundColor Red -BackgroundColor Yellow
+            }
+        }
+        else {
+            Write-Host "Copying ${targetPath}..."  
+            Copy-New-Item -Path $sourceFile.FullName -Destination $targetPath -Recurse -Force
         }
     }
-    else {
-        Write-Host "Copying ${targetPath}..."  
-        Copy-New-Item -Path $sourceBuildFile.FullName -Destination $targetPath -Recurse -Force
-    }
-    # Write-Host $targetPath $exists #sourceRelativePath
-}
-
-##### .config folder #####
-
-$targetConfigPath = Join-Path -Path $currentDirectory -ChildPath "/.config/"
-
-$copyConfigFiles = -not (Test-Path -Path $targetConfigPath)
-if($copyConfigFiles -eq $false)
-{
-    $targetConfigFilesCount = (Get-ChildItem -Path $targetConfigPath -Filter "*.env").Count
-    if($targetConfigFilesCount -gt 0)
-    {
-        Write-Host "Env files already found, skipping..." -ForegroundColor Red -BackgroundColor Yellow
-    }
-    else {
-        $copyConfigFiles=$true
-    }
-}
-
-if($copyConfigFiles -eq $true) {
-    Write-Host "Copying .config folder..."
-    $sourceConfigPath = Join-Path -Path $installPath -ChildPath "/.config/"
-    Copy-Item -Path $sourceConfigPath -Destination $currentDirectory -Recurse
 }

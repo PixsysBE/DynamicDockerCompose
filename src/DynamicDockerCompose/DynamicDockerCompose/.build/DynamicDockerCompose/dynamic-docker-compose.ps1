@@ -54,18 +54,24 @@ if ([string]::IsNullOrWhiteSpace($rootPath)) {
 }
 
 # Set Environment variables
-$env:solutionName = Get-EnvValue -content $envFileContent -variableName "SOLUTION_NAME"
 $env:rootAbsolutePath = Use-Absolute-Path -path $rootPath
-Write-Host-Verbose "rootAbsolutePath:" $env:rootAbsolutePath
-$env:dockerFilePath = Get-Relative-Path-From-Root-Absolute-Path -name "dockerFilePath" -paramValue $dockerFilePath -envFileContent $envFileContent -envVariableName "DOCKER_FILE_PATH" -defaultPath "./**/.build/Dockerfile" -verbose:$verbose
-Write-Host-Verbose "dockerFilePath:" $env:dockerFilePath
-$env:csprojPath = Get-Relative-Path-From-Root-Absolute-Path -name "csprojPath" -paramValue $csprojPath -envFileContent $envFileContent -envVariableName "CSPROJ_PATH" -defaultPath "./**/*.csproj" -excludePattern ".Tests.csproj" -verbose:$verbose
-Write-Host-Verbose "csprojPath:" $env:csprojPath
-$env:slnPath = Get-Relative-Path-From-Root-Absolute-Path -name "slnPath" -paramValue $slnPath -envFileContent $envFileContent -envVariableName "SLN_PATH" -defaultPath "./*.sln" -verbose:$verbose
-Write-Host-Verbose "slnPath:" $env:slnPath
-$env:entrypointScriptPath = Get-Relative-Path-From-Root-Absolute-Path -name "entrypointScriptPath" -paramValue $entrypointScriptPath -envFileContent $envFileContent -envVariableName "ENTRYPOINT_SCRIPT_PATH" -defaultPath "./**/.build/DynamicDockerCompose/Scripts/entrypoint.sh" -verbose:$verbose
-Write-Host-Verbose "entrypointScriptPath:" $env:entrypointScriptPath
-$dockerComposeYamlPath = Get-Relative-Path-From-Root-Absolute-Path -name "dockerComposeYamlPath" -paramValue $dockerComposeYamlPath -envFileContent $envFileContent -envVariableName "DOCKER_COMPOSE_YAML_PATH" -defaultPath "./**/.build/docker-compose.yaml" -verbose:$verbose
+Write-Host -ForegroundColor Green "rootAbsolutePath:" $env:rootAbsolutePath
+$env:slnPath = Get-Variable-Absolute-Path -variableName "slnPath" -paramValue $slnPath -envFileContent $envFileContent -envVariableName "SLN_PATH" -filter "*.sln" -verbose:$verbose
+$env:solutionName = Split-Path -Path $env:slnPath -Parent | Split-Path -Leaf
+$env:slnPath = Get-Relative-Path-From-Absolute-Path -absolutePath $env:slnPath -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose
+Write-Host -ForegroundColor Green "slnPath:" $env:slnPath
+Write-Host -ForegroundColor Green "solutionName:" $env:solutionName
+$env:dockerFilePath = $(Get-Variable-Absolute-Path -variableName "dockerFilePath" -paramValue $slnPath -envFileContent $envFileContent -envVariableName "DOCKER_FILE_PATH" -filter "Dockerfile" -Directory ".build" -verbose:$verbose) | 
+                      ForEach-Object { Get-Relative-Path-From-Absolute-Path -absolutePath $_ -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose }
+Write-Host -ForegroundColor Green "dockerFilePath:" $env:dockerFilePath
+$env:csprojPath = $(Get-Variable-Absolute-Path -variableName "csprojPath" -paramValue $csprojPath -envFileContent $envFileContent -envVariableName "CSPROJ_PATH" -filter "*.csproj" -verbose:$verbose -excludePattern ".Tests.csproj") | 
+                  ForEach-Object { Get-Relative-Path-From-Absolute-Path -absolutePath $_ -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose }
+Write-Host -ForegroundColor Green "csprojPath:" $env:csprojPath
+$env:entrypointScriptPath = $(Get-Variable-Absolute-Path -variableName "entrypointScriptPath" -paramValue $entrypointScriptPath -envFileContent $envFileContent -envVariableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -verbose:$verbose) | 
+                            ForEach-Object { Get-Relative-Path-From-Absolute-Path -absolutePath $_ -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose }
+Write-Host -ForegroundColor Green "entrypointScriptPath:" $env:entrypointScriptPath 
+$dockerComposeYamlPath = Get-Variable-Absolute-Path -variableName "dockerComposeYamlPath" -paramValue $dockerComposeYamlPath -envFileContent $envFileContent -envVariableName "DOCKER_COMPOSE_YAML_PATH" -filter "docker-compose.yaml" -Directory "./**/.build" -verbose:$verbose
+Write-Host -ForegroundColor Green "dockerComposeYamlPath:" $dockerComposeYamlPath
 
 # Run Docker compose
 docker-compose --env-file $envFilePath -f $dockerComposeYamlPath up --build
