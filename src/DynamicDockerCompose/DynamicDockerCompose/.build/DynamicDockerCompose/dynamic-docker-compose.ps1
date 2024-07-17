@@ -3,20 +3,16 @@
     [string]$envFileName,
     [switch]$up=$false,
     [switch]$down=$false,
-    [string]$rootPath,
-    [string]$dockerComposeYamlPath,
-    [string]$dockerFilePath,
-    [string]$csprojPath,
-    [string]$slnPath,
-    [string]$entrypointScriptPath,
-    [switch]$verbose
+    [switch]$list=$false,
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$remainingArgs
 )
 
 $ErrorActionPreference = 'Stop'
 
-if((-not $up.IsPresent) -and (-not $down.IsPresent))
+if((-not $up.IsPresent) -and (-not $down.IsPresent) -and (-not $list.IsPresent))
 {
-  Write-Host "Mode not selected, please use -up or -down"  
+  Write-Host "Mode not selected, please use -up, -down or -list"  
   exit 1
 }
 
@@ -38,40 +34,53 @@ if((Test-Path -Path $envFilePath) -eq $false)
 $envFilePath = Resolve-Path $envFilePath 
 
 if($down.IsPresent){
-    docker-compose --env-file ${envFilePath} down
+    docker-compose --env-file $envFilePath down
     exit 0
 }
 
-# Get env file content
-$envFileContent = Get-Content -Path $envFilePath
+$variables = @()
+$envFileContent = $null
+
+Get-Dynamic-Parameters -remainingArgs $remainingArgs -collection ([ref]$variables)
+Get-Env-File-Variables -filepath $envFilePath -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+
 # Get Root path
 if ([string]::IsNullOrWhiteSpace($rootPath)) {
-    $rootPath = Get-EnvValue -content $envFileContent -variableName "ROOT_PATH" -verbose:$verbose
+    $rootPath = Get-EnvValue -content $envFileContent -variableName "ROOT_PATH"
     if ([string]::IsNullOrWhiteSpace($rootPath)) {
         # Define root path from script location
         $rootPath = Resolve-Path (Join-Path -Path $PSScriptRoot -ChildPath "../../../")
     }
 }
-
-# Set Environment variables
 $env:rootAbsolutePath = Use-Absolute-Path -path $rootPath
-Write-Host -ForegroundColor Green "rootAbsolutePath:" $env:rootAbsolutePath
-$env:slnPath = Get-Variable-Absolute-Path -variableName "slnPath" -paramValue $slnPath -envFileContent $envFileContent -envVariableName "SLN_PATH" -filter "*.sln" -verbose:$verbose
-$env:solutionName = Split-Path -Path $env:slnPath -Parent | Split-Path -Leaf
-$env:slnPath = Get-Relative-Path-From-Absolute-Path -absolutePath $env:slnPath -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose
-Write-Host -ForegroundColor Green "slnPath:" $env:slnPath
-Write-Host -ForegroundColor Green "solutionName:" $env:solutionName
-$env:dockerFilePath = $(Get-Variable-Absolute-Path -variableName "dockerFilePath" -paramValue $slnPath -envFileContent $envFileContent -envVariableName "DOCKER_FILE_PATH" -filter "Dockerfile" -Directory ".build" -verbose:$verbose) | 
-                      ForEach-Object { Get-Relative-Path-From-Absolute-Path -absolutePath $_ -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose }
-Write-Host -ForegroundColor Green "dockerFilePath:" $env:dockerFilePath
-$env:csprojPath = $(Get-Variable-Absolute-Path -variableName "csprojPath" -paramValue $csprojPath -envFileContent $envFileContent -envVariableName "CSPROJ_PATH" -filter "*.csproj" -verbose:$verbose -excludePattern ".Tests.csproj") | 
-                  ForEach-Object { Get-Relative-Path-From-Absolute-Path -absolutePath $_ -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose }
-Write-Host -ForegroundColor Green "csprojPath:" $env:csprojPath
-$env:entrypointScriptPath = $(Get-Variable-Absolute-Path -variableName "entrypointScriptPath" -paramValue $entrypointScriptPath -envFileContent $envFileContent -envVariableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -verbose:$verbose) | 
-                            ForEach-Object { Get-Relative-Path-From-Absolute-Path -absolutePath $_ -fromAbsolutePath $env:rootAbsolutePath -verbose:$verbose }
-Write-Host -ForegroundColor Green "entrypointScriptPath:" $env:entrypointScriptPath 
-$dockerComposeYamlPath = Get-Variable-Absolute-Path -variableName "dockerComposeYamlPath" -paramValue $dockerComposeYamlPath -envFileContent $envFileContent -envVariableName "DOCKER_COMPOSE_YAML_PATH" -filter "docker-compose.yaml" -Directory "./**/.build" -verbose:$verbose
-Write-Host -ForegroundColor Green "dockerComposeYamlPath:" $dockerComposeYamlPath
+Add-Variable-To-Collection -name "ROOT_ABSOLUTE_PATH" -value $env:rootAbsolutePath -collection ([ref]$variables)
+
+# Get Docker compose yaml variables
+$dockerComposeYamlVariableName = "dockerComposeYamlPath"
+$(Get-Variable-Absolute-Path -variableName $dockerComposeYamlVariableName -filter "docker-compose.yaml" -Directory "./**/.build" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)) | ForEach-Object{ Add-Variable-To-Collection -name $dockerComposeYamlVariableName -value $_ -collection ([ref]$variables) } 
+$dockerComposeYamlPathExists = $variables | Where-Object {$_.name -eq $dockerComposeYamlVariableName}
+if($dockerComposeYamlPathExists){
+    Get-Docker-Compose-Variables -filepath $dockerComposeYamlPathExists.value -collection ([ref]$variables)
+}
+
+
+# Get dotnet-webapp variables
+$slnPath = Get-Variable-Absolute-Path -variableName "SLN_PATH" -paramValue $slnPath -filter "*.sln" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+Add-Variable-To-Collection -name "SOLUTION_NAME" -value (Split-Path -Path $slnPath -Parent | Split-Path -Leaf) -collection ([ref]$variables)  
+Add-Variable-To-Collection -name "SLN_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $slnPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+$dockerFilePath = Get-Variable-Absolute-Path -variableName "DOCKER_FILE_PATH" -filter "Dockerfile" -Directory ".build" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+Add-Variable-To-Collection -name "DOCKER_FILE_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $dockerFilePath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+$csprojPath = Get-Variable-Absolute-Path -variableName "CSPROJ_PATH" -filter "*.csproj" -verbose:$verbose -excludePattern ".Tests.csproj" 
+Add-Variable-To-Collection -name "CSPROJ_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $csprojPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+$entrypointScriptPath = Get-Variable-Absolute-Path -variableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -absolutePath $entrypointScriptPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+
+
+Write-Output $variables | Sort-Object Name
+
+if($list.IsPresent){ exit 0 }
+
+Set-Environment-Variables -collection ([ref]$variables)
 
 # Run Docker compose
-docker-compose --env-file $envFilePath -f $dockerComposeYamlPath up --build
+docker-compose --env-file $envFilePath -f $dockerComposeYamlPathExists.value up --build

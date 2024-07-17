@@ -46,12 +46,11 @@ You can create a .env file to substitute your variables. Here is a file example:
 
 ```
 COMPOSE_PROJECT_NAME=my-project # project name, will be used to generate containers names
-SOLUTION_NAME=MyProject # solution name. VS created a folder with the solution name (usually located in /src) 
 HTTP_PORT=8006
 HTTPS_PORT=8007
 ENV=docker-dev
 TAG=local
-ROOT_PATH=../../../../../ # your solution parent folder
+ROOT_PATH=../../../../../ # your solution folder
 ```
 
 All your .env files must be placed inside your .config folder. You will then use the **-env-name** parameter to use the one you want with the Dynamic **Dynamic Docker Compose** Powershell script.
@@ -71,6 +70,7 @@ Some variables can be defined either when calling the **Dynamic Docker Compose**
 
 
 ## Compose your application
+> Make sure Docker Desktop is running first
 
 Run the **Dynamic Docker Compose** Powershell script located in your .build folder with minimum 2 parameters: the .env file name and the up (or down) command:
 
