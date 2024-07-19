@@ -46,7 +46,7 @@ Get-Env-File-Variables -filepath $envFilePath -collection ([ref]$variables) -env
 
 # Get Root path
 if ([string]::IsNullOrWhiteSpace($rootPath)) {
-    $rootPath = Get-EnvValue -content $envFileContent -variableName "ROOT_PATH"
+    $rootPath = Get-Env-Variable-Value -content $envFileContent -variableName "ROOT_PATH"
     if ([string]::IsNullOrWhiteSpace($rootPath)) {
         # Define root path from script location
         $rootPath = Resolve-Path (Join-Path -Path $PSScriptRoot -ChildPath "../../../")
@@ -70,7 +70,7 @@ Add-Variable-To-Collection -name "SOLUTION_NAME" -value (Split-Path -Path $slnPa
 Add-Variable-To-Collection -name "SLN_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $slnPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
 $dockerFilePath = Get-Variable-Absolute-Path -variableName "DOCKER_FILE_PATH" -filter "Dockerfile" -Directory ".build" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
 Add-Variable-To-Collection -name "DOCKER_FILE_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $dockerFilePath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
-$csprojPath = Get-Variable-Absolute-Path -variableName "CSPROJ_PATH" -filter "*.csproj" -verbose:$verbose -excludePattern ".Tests.csproj" 
+$csprojPath = Get-Variable-Absolute-Path -variableName "CSPROJ_PATH" -filter "*.csproj" -excludePattern ".Tests.csproj" 
 Add-Variable-To-Collection -name "CSPROJ_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $csprojPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
 $entrypointScriptPath = Get-Variable-Absolute-Path -variableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
 Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -absolutePath $entrypointScriptPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  

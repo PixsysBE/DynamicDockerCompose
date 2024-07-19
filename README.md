@@ -1,9 +1,16 @@
 ﻿# Dynamic Docker Compose
 
-Dynamic Docker Compose allows you to dynamically retrieve values of your custom variables before passing them to [Docker Compose](https://docs.docker.com/compose/).
-Variables values are passed as parameters in your Powershell script or can be stored in your in your .env file.
+Dynamic Docker Compose allows you to dynamically retrieve values required by your [Docker Compose](https://docs.docker.com/compose/) and Dockerfile.
 
-> This tool is suited to quickly dockerize .net core applications, but you can customize scripts for your needs.
+It will look in different locations and set new environment variables so they can be used when creating your container.
+
+The variables values can be retrieved in 3 different ways:
+
+- By passing them as dynamic parameters when calling the Powershell script 
+- By storing them in a .env file
+- Using the default locations, the script will try to find specific paths
+
+> This tool is suited to quickly dockerize .net core applications, but you can customize scripts depending on your needs.
 
 ## Application General Structure
 
@@ -39,6 +46,38 @@ By installing the package, you will create new folders **.build** and **.config*
 │   │   ├── <Tests Project Name>
 ```
 
+## Setting up your variables
+
+Let's say you want to add some customs arguments as described here:
+
+```
+version: '3'
+services: 
+  frontend:
+    image: ...
+    build: 
+      context: ...
+      dockerfile: ...
+      args:  
+        - CUSTOM_PATH=${CUSTOM_PATH}
+        - IS_DEV_ENVIRONMENT=${SWITCHPARAM}
+```
+
+You can add as much dynamic variables as you need when calling the script. These can be string (=they have a value) or switch (boolean). 
+
+Here is an example:
+
+```powershell
+.\dynamic-docker-compose.ps1 -env-name dev -CUSTOM_PATH "C:\Test" -SWITCHPARAM -list
+```
+
+This will create the 2 following variables:
+| Name | Value | Type | Location
+|----------|----------|------------|------------|
+| CUSTOM_PATH | C:\Test | string | parameter
+| SWITCHPARAM | True | switch | parameter
+
+Please note that by design, only the uppercase variable names will be set as environment variables.
 
 ## Setting up your environment file
 
@@ -53,26 +92,26 @@ TAG=local
 ROOT_PATH=../../../../../ # your solution folder
 ```
 
-All your .env files must be placed inside your .config folder. You will then use the **-env-name** parameter to use the one you want with the Dynamic **Dynamic Docker Compose** Powershell script.
+All your .env files must be placed inside your .config folder. You will then use the **-env-name** parameter to use the one you want with the **Dynamic Docker Compose** Powershell script.
 
-## Setting up your variables
+## Looking for some paths
 
-Some variables can be defined either when calling the **Dynamic Docker Compose** Powershell script or in the env file.If not defined, the default location will be used. All variables paths must be set from the root path.
+If needed variables are not defined by one of the two above methods, it will start to look in specific locations. All paths found will be relative from the root path.
 
-| Variable | Env File | Default location | Description|
+| Name | Variable Name | Default location | Description|
 |----------|----------|------------|------------|
-|rootPath|ROOT_PATH|Defined from script location|The path to your root folder
-|dockerComposeYamlPath|DOCKER_COMPOSE_YAML_PATH|"./.build/docker-compose.yaml"| The path to your Docker compose yaml file
-|dockerFilePath|DOCKER_FILE_PATH|"./.build/Dockerfile"| The path to your Dockerfile 
-|csprojPath|CSPROJ_PATH|"./**/*.csproj"| The path to your .csproj
-|slnPath|SLN_PATH|"./*.sln"| The path to your .sln
-|entrypointScriptPath|ENTRYPOINT_SCRIPT_PATH|"./.build/DynamicDockerCompose/Scripts/entrypoint.sh"| The path to the entrypoint shell bash
+|Root Path|ROOT_PATH|"../../../" from script location|The path to your root folder
+|Docker Compose Yaml Path|DOCKER_COMPOSE_YAML_PATH|"./.build/docker-compose.yaml"| The path to your Docker compose yaml file
+|Dockerfile Path|DOCKER_FILE_PATH|"./.build/Dockerfile"| The path to your Dockerfile 
+|csproj Path|CSPROJ_PATH|"./**/*.csproj"| The path to your .csproj
+|sln Path|SLN_PATH|"./*.sln"| The path to your .sln
+|Entrypoint Script Path|ENTRYPOINT_SCRIPT_PATH|"./.build/DynamicDockerCompose/Scripts/entrypoint.sh"| The path to the entrypoint shell bash
 
 
 ## Compose your application
 > Make sure Docker Desktop is running first
 
-Run the **Dynamic Docker Compose** Powershell script located in your .build folder with minimum 2 parameters: the .env file name and the up (or down) command:
+Run the **Dynamic Docker Compose** Powershell script located in your .build folder with minimum 2 parameters: the .env file name and the up,down or list command:
 
 ```powershell
 .\.build\DynamicDockerCompose\dynamic-docker-compose.ps1 -env-name docker-dev -up
