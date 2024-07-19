@@ -111,7 +111,20 @@ If needed variables are not defined by one of the two above methods, it will sta
 ## Compose your application
 > Make sure Docker Desktop is running first
 
-Run the **Dynamic Docker Compose** Powershell script located in your .build folder with minimum 2 parameters: the .env file name and the up,down or list command:
+Run the **Dynamic Docker Compose** Powershell script located in your .build folder with minimum one of these parameters: 
+
+|   Name       | Description   |
+|----------|----------|
+| -up | Creates and starts the container |
+| -down | Removes the container |
+| -list | List all variables and their values |
+
+Optional parameters :
+|   Name       | Description   |
+|----------|----------|
+| -env-name  | the name of the .env file to be used |
+
+Example :
 
 ```powershell
 .\.build\DynamicDockerCompose\dynamic-docker-compose.ps1 -env-name docker-dev -up

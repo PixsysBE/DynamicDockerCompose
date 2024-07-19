@@ -16,25 +16,28 @@ if((-not $up.IsPresent) -and (-not $down.IsPresent) -and (-not $list.IsPresent))
   exit 1
 }
 
-if ([string]::IsNullOrWhiteSpace($envFileName)) {
-	$envFileName = Read-Host -Prompt "Please enter the .env file name located in your .config folder (ex.: docker-dev)" 
-}
 
 # Import functions
 $functionsPath = Join-Path -Path $PSScriptRoot -ChildPath "./dynamic-docker-compose.functions.ps1"
 . $functionsPath
 
 # Get env file path
-$envFilePath = Join-Path -Path $PSScriptRoot -ChildPath "../../.config/${envFileName}.env"
-if((Test-Path -Path $envFilePath) -eq $false)
-{
-    Write-Host "env file not found. Please make sure it is located in your .config folder"
-    exit 1
+if (-not [string]::IsNullOrWhiteSpace($envFileName)) {
+    $envFilePath = Join-Path -Path $PSScriptRoot -ChildPath "../../.config/${envFileName}.env"
+    if((Test-Path -Path $envFilePath) -eq $false)
+    {
+        Write-Host "env file not found. Please make sure it is located in your .config folder"
+        exit 1
+    }
+    $envFilePath = Resolve-Path $envFilePath 
 }
-$envFilePath = Resolve-Path $envFilePath 
 
 if($down.IsPresent){
+    if (-not [string]::IsNullOrWhiteSpace($envFilePath)) {
     docker-compose --env-file $envFilePath down
+    } else {
+        docker-compose down
+    }
     exit 0
 }
 
@@ -42,7 +45,9 @@ $variables = @()
 $envFileContent = $null
 
 Get-Dynamic-Parameters -remainingArgs $remainingArgs -collection ([ref]$variables)
-Get-Env-File-Variables -filepath $envFilePath -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+if (-not [string]::IsNullOrWhiteSpace($envFilePath)) {
+    Get-Env-File-Variables -filepath $envFilePath -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+}
 
 # Get Root path
 if ([string]::IsNullOrWhiteSpace($rootPath)) {
@@ -75,12 +80,16 @@ Add-Variable-To-Collection -name "CSPROJ_PATH" -value ( Get-Relative-Path-From-A
 $entrypointScriptPath = Get-Variable-Absolute-Path -variableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
 Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -absolutePath $entrypointScriptPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
 
-
-Write-Output $variables | Sort-Object Name
-
-if($list.IsPresent){ exit 0 }
+if($list.IsPresent){ 
+    Write-Output $variables | Sort-Object Name
+    exit 0 
+}    
 
 Set-Environment-Variables -collection ([ref]$variables)
 
 # Run Docker compose
-docker-compose --env-file $envFilePath -f $dockerComposeYamlPathExists.value up --build
+if (-not [string]::IsNullOrWhiteSpace($envFilePath)) {
+    docker-compose --env-file $envFilePath -f $dockerComposeYamlPathExists.value up --build
+} else {
+    docker-compose -f $dockerComposeYamlPathExists.value up --build
+}
