@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/PixsysBE/DynamicDockerCompose/compare/v1.2.0...v1.2.1) (2024-07-25)
+
+
+### Bug Fixes
+
+* updated Kestrel certificates ([6bb7611](https://github.com/PixsysBE/DynamicDockerCompose/commit/6bb761187b4899c0b45b3473b62a6905cfe91551))
+
 # [1.2.0](https://github.com/PixsysBE/DynamicDockerCompose/compare/v1.1.0...v1.2.0) (2024-07-25)
 
 
