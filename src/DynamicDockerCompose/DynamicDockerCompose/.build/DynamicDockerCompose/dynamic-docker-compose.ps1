@@ -1,6 +1,7 @@
 ﻿param (
     [Alias("env-name")]
     [string]$envFileName,
+    [string]$template,
     [switch]$up=$false,
     [switch]$down=$false,
     [switch]$list=$false,
@@ -68,17 +69,30 @@ if($dockerComposeYamlPathExists){
     Get-Docker-Compose-Variables -filepath $dockerComposeYamlPathExists.value -collection ([ref]$variables)
 }
 
-
-# Get dotnet-webapp variables
-$slnPath = Get-Variable-Absolute-Path -variableName "SLN_PATH" -paramValue $slnPath -filter "*.sln" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
-Add-Variable-To-Collection -name "SOLUTION_NAME" -value (Split-Path -Path $slnPath -Parent | Split-Path -Leaf) -collection ([ref]$variables)  
-Add-Variable-To-Collection -name "SLN_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $slnPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
-$dockerFilePath = Get-Variable-Absolute-Path -variableName "DOCKER_FILE_PATH" -filter "Dockerfile" -Directory ".build" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
-Add-Variable-To-Collection -name "DOCKER_FILE_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $dockerFilePath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
-$csprojPath = Get-Variable-Absolute-Path -variableName "CSPROJ_PATH" -filter "*.csproj" -excludePattern ".Tests.csproj" 
-Add-Variable-To-Collection -name "CSPROJ_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $csprojPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
-$entrypointScriptPath = Get-Variable-Absolute-Path -variableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
-Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -absolutePath $entrypointScriptPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+if($template -eq "dotnet-webapp")
+{
+    # Get dotnet-webapp variables
+    $slnPath = Get-Variable-Absolute-Path -variableName "SLN_PATH" -paramValue $slnPath -filter "*.sln" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+    Add-Variable-To-Collection -name "SOLUTION_NAME" -value (Split-Path -Path $slnPath -Parent | Split-Path -Leaf) -collection ([ref]$variables)  
+    Add-Variable-To-Collection -name "SLN_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $slnPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+    $dockerFilePath = Get-Variable-Absolute-Path -variableName "DOCKER_FILE_PATH" -filter "Dockerfile" -Directory ".build" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+    Add-Variable-To-Collection -name "DOCKER_FILE_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $dockerFilePath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+    $csprojPath = Get-Variable-Absolute-Path -variableName "CSPROJ_PATH" -filter "*.csproj" -excludePattern ".Tests.csproj" 
+    Add-Variable-To-Collection -name "CSPROJ_PATH" -value ( Get-Relative-Path-From-Absolute-Path -absolutePath $csprojPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+    $entrypointScriptPath = Get-Variable-Absolute-Path -variableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -Directory "./**/.build/DynamicDockerCompose/Scripts" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+    Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -absolutePath $entrypointScriptPath -fromAbsolutePath $env:rootAbsolutePath) -collection ([ref]$variables)  
+    $secretstorePasswordPath = Get-Variable-Absolute-Path -variableName "secretstore_password_path" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+    Add-Variable-To-Collection -name "secretstore_password_path" -value $secretstorePasswordPath -collection ([ref]$variables)  
+    $secretstoreVaultName = Get-Variable-Absolute-Path -variableName "secretstore_vault_name" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
+    Add-Variable-To-Collection -name "secretstore_vault_name" -value $secretstoreVaultName -collection ([ref]$variables)  
+    if ((-not [string]::IsNullOrWhiteSpace($secretstorePasswordPath)) -and (-not [string]::IsNullOrWhiteSpace($secretstorePasswordPath))) {
+        # Unlock secret store to get secrets
+        $secretstorePassword = Import-CliXml -Path $secretstorePasswordPath
+        Unlock-SecretStore -Password $secretstorePassword
+        Add-Variable-To-Collection -name CERTIFICATE_PATH -value (Get-Secret -Name CERTIFICATE_PATH -Vault $secretstoreVaultName -AsPlainText) -collection ([ref]$variables)  
+        Add-Variable-To-Collection -name CERTIFICATE_PASSWORD -value (Get-Secret -Name CERTIFICATE_PASSWORD -Vault $secretstoreVaultName -AsPlainText) -collection ([ref]$variables)  
+    }
+}
 
 if($list.IsPresent){ 
     Write-Output $variables | Sort-Object Name

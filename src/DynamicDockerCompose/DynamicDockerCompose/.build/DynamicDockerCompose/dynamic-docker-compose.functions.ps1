@@ -99,37 +99,42 @@ if (-not [string]::IsNullOrWhiteSpace($envValue)) {
 }
 
 # Using search parameters
-Write-Verbose ("[Get-Variable-Absolute-Path] Searching from path: $env:rootAbsolutePath")
-Write-Verbose ("[Get-Variable-Absolute-Path] filter: $filter")
-if (-not [string]::IsNullOrWhiteSpace($directory)) { 
-  Write-Verbose ("[Get-Variable-Absolute-Path] directory: $directory")
-  if($directory -like "*/*"){
-      $directory = Join-Path -Path $env:rootAbsolutePath -ChildPath $directory | Resolve-Path
-      $items = @(Get-ChildItem -Path $directory | Where-Object { $_.FullName.Contains($filter)} | Select-Object FullName)
+if (-not [string]::IsNullOrWhiteSpace($filter)) { 
+  Write-Verbose ("[Get-Variable-Absolute-Path] Searching from path: $env:rootAbsolutePath")
+  Write-Verbose ("[Get-Variable-Absolute-Path] filter: $filter")
+  if (-not [string]::IsNullOrWhiteSpace($directory)) { 
+    Write-Verbose ("[Get-Variable-Absolute-Path] directory: $directory")
+    if($directory -like "*/*"){
+        $directory = Join-Path -Path $env:rootAbsolutePath -ChildPath $directory | Resolve-Path
+        $items = @(Get-ChildItem -Path $directory | Where-Object { $_.FullName.Contains($filter)} | Select-Object FullName)
+    } else {
+        $items = Get-ChildItem -Path $env:rootAbsolutePath -Recurse -Directory -Filter $directory  | 
+        ForEach-Object { Get-ChildItem -Path $_.FullName -Filter $filter | Select-Object FullName }
+    }
   } else {
-      $items = Get-ChildItem -Path $env:rootAbsolutePath -Recurse -Directory -Filter $directory  | 
-      ForEach-Object { Get-ChildItem -Path $_.FullName -Filter $filter | Select-Object FullName }
-  }
-} else {
-  $items = Get-ChildItem -Path $env:rootAbsolutePath -Recurse -Filter $filter  
-}
-if ($items.Count -gt 1) {
-  if(-not [string]::IsNullOrWhiteSpace($excludePattern) )
-  {
-      $items = $items | Where-Object { -not $_.FullName.Contains($excludePattern) }
-      if ($items.Count -eq 1) {
-         return $items[0].FullName
-      }
+    $items = Get-ChildItem -Path $env:rootAbsolutePath -Recurse -Filter $filter  
   }
   if ($items.Count -gt 1) {
-       Write-Host "[Get-Variable-Absolute-Path] Error when checking variable ${variableName} : $($items.Count) match(es) found after filtering." -ForegroundColor Red
-       exit 1
-   }
-}elseif($items.Count -eq 0) {
-  Write-Host "[Get-Variable-Absolute-Path] No value has been found for variable $variableName with filter $filter" -ForegroundColor Red
-  exit 1
-}
-return $items[0].FullName
+    if(-not [string]::IsNullOrWhiteSpace($excludePattern) )
+    {
+        $items = $items | Where-Object { -not $_.FullName.Contains($excludePattern) }
+        if ($items.Count -eq 1) {
+          return $items[0].FullName
+        }
+    }
+    if ($items.Count -gt 1) {
+        Write-Host "[Get-Variable-Absolute-Path] Error when checking variable ${variableName} : $($items.Count) match(es) found after filtering." -ForegroundColor Red
+        exit 1
+    }
+  }elseif($items.Count -eq 0) {
+    Write-Host "[Get-Variable-Absolute-Path] No value has been found for variable $variableName with filter $filter" -ForegroundColor Red
+    exit 1
+  }
+  return $items[0].FullName
+  } else {
+    Write-Verbose ("[Get-Variable-Absolute-Path] No filter assigned")
+    return $null
+  }
 }
 
 <#
