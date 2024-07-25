@@ -6,8 +6,7 @@ param (
 	[switch]$createGithubRelease,
 	[switch]$autoBuild,
 	[string]$csprojPath,
-	[string]$nuspecFilePath,
-	[switch]$verbose
+	[string]$nuspecFilePath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -45,14 +44,17 @@ if($publishToNuget.IsPresent){
 $env:PUBLISH_PACKAGE_TO_NUGET_SOURCE = Format-With-Double-Backslash -string $publishToSource
 
 # Ensure .nuspec has all the properties needed
-$nuspecProperties = Confirm-Nuspec-Properties -filePath $nuspecFilePath -verbose:$verbose
+$nuspecProperties = Confirm-Nuspec-Properties -filePath $nuspecFilePath
 
 # Ensure package.json has all the properties needed
-$packageJsonProperties = Confirm-Package-Json-Properties -filePath $packageJsonPath -packageId $nuspecProperties.Id -verbose:$verbose
+$packageJsonProperties = Confirm-Package-Json-Properties -filePath $packageJsonPath -packageId $nuspecProperties.Id
 
 # Git Hooks
 $csprojPath = Get-Csproj-Path -csprojPath $csprojPath
-Copy-Git-Hooks -filePath $csprojPath -includePath $csprojTargetGitHooksCommitMsgPath -destinationFolder $csprojTargetGitHooksCommitMsgDestinationFolder -verbose:$verbose
+Copy-Git-Hooks -filePath $csprojPath -includePath $csprojTargetGitHooksCommitMsgPath -destinationFolder $csprojTargetGitHooksCommitMsgDestinationFolder
+
+# Ensure csproj has all the properties needed
+Confirm-csproj-properties -filePath $csprojPath
 
 # Create Semantic release config file based on parameters
 $releaseConfig = (Get-Content -Path $mainConfigPath) -replace "{%GITHUB%}", $githubConfig

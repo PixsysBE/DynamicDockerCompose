@@ -27,9 +27,6 @@
     <None Include=".config\docker-dev.sample.env" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CakeRelease" Version="1.9.1" />
-  </ItemGroup>
-  <ItemGroup>
     <None Update="Tools\init.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

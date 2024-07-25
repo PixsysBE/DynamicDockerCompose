@@ -41,7 +41,7 @@ if($autoBuild.IsPresent){
     $nuspec = "release.nuspec"
 }
 
-$nuspecFilePath = Test-NuSpec-Exists -nuspecFilePath $nuspecFilePath -defaultPath ".\.build\CakeRelease\Package\${nuspec}" -verbose:$verbose
+$nuspecFilePath = Test-NuSpec-Exists -nuspecFilePath $nuspecFilePath -defaultPath ".\.config\${nuspec}"
 
 # Git Hooks
 $gitHooksFolder=""
