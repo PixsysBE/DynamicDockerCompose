@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/PixsysBE/DynamicDockerCompose/compare/v1.2.2...v1.2.3) (2024-07-26)
+
+
+### Bug Fixes
+
+* readme ([119522c](https://github.com/PixsysBE/DynamicDockerCompose/commit/119522c63b72d3211e755e6f818f67f5acf5ef1e))
+
 ## [1.2.2](https://github.com/PixsysBE/DynamicDockerCompose/compare/v1.2.1...v1.2.2) (2024-07-26)
 
 
