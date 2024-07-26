@@ -135,6 +135,8 @@ If you don't already have one, create your trusted HTTPS development certificate
 
 ```
 
+## Securing HTTPS certificate properties
+
 Once the certificate is created, we will store its path and password as secrets in the PowerShell [SecretManagement and SecretStore](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules) modules.
 
 > More info available here : [Use the SecretStore in automation](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules)
@@ -158,7 +160,7 @@ Password for user SecureStore: **************
 Once you set the password you can export it to an XML file, encrypted by Windows Data Protection (DPAPI).
 
 ```powershell
-$securePasswordPath = 'C:\automation\passwd.xml'
+$securePasswordPath = 'C:\Automation\securestorepasswd.xml'
 $credential.Password |  Export-Clixml -Path $securePasswordPath
 ```
 
@@ -184,8 +186,8 @@ Set your secrets
 
 ```powershell
 Unlock-SecretStore -Password $password
-Set-Secret -Name CERTIFICATE_PATH -Secret "/root/.aspnet/https/aspnetapp.pfx" -Vault TestPixsysPackages.DEV -Metadata @{Purpose="Certificate Path"}	
-Set-Secret -Name CERTIFICATE_PASSWORD -Secret "Password1" -Vault TestPixsysPackages.DEV -Metadata @{Purpose="Certificate Password"}	
+Set-Secret -Name CERTIFICATE_PATH -Secret "/root/.aspnet/https/aspnetapp.pfx" -Vault YourVaultName -Metadata @{Purpose="Certificate Path"}	
+Set-Secret -Name CERTIFICATE_PASSWORD -Secret "Password1" -Vault YourVaultName -Metadata @{Purpose="Certificate Password"}	
 ```
 
 To get the list of all of your secrets, you can run:
@@ -199,8 +201,8 @@ Unregister-SecretVault -Name YourVaultName
 
 Then, reference the secret store password location and the vault name in the .env file [as showed above](#setting-up-your-environment-file):
 ```
-secretstore_password_path=E:\Automation\securestorepasswd.xml
-secretstore_vault_name=TestPixsysPackages.DEV
+secretstore_password_path=C:\Automation\securestorepasswd.xml
+secretstore_vault_name=YourVaultName
 ```
 
 The script will try to unlock the specified vault with the provided password to get the HTTPS certificate path and password.
