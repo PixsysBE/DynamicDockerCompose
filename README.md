@@ -230,4 +230,4 @@ Example :
 .\.build\DynamicDockerCompose\dynamic-docker-compose.ps1 -env-name docker-dev -template dotnet-webapp -up
 ```
 
-Environment variables will be dynamically generated and passed to Dockerfile and docker-compose.yaml to build your containers.
+Environment variables will be dynamically generated and passed to your Dockerfile and docker-compose.yaml to build your containers.
