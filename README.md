@@ -1,4 +1,5 @@
-﻿# Dynamic Docker Compose
+﻿[![Nuget](https://img.shields.io/nuget/v/DynamicDockerCompose.svg)](https://www.nuget.org/packages/DynamicDockerCompose)
+# Dynamic Docker Compose
 
 Dynamic Docker Compose allows you to dynamically retrieve values required by your [Docker Compose](https://docs.docker.com/compose/) and Dockerfile.
 
@@ -51,7 +52,6 @@ By installing the package, you will create new folders **.build** and **.config*
 Let's say you want to add some customs arguments as described here:
 
 ```
-version: '3'
 services: 
   frontend:
     image: ...
@@ -164,7 +164,7 @@ $securePasswordPath = 'C:\Automation\securestorepasswd.xml'
 $credential.Password |  Export-Clixml -Path $securePasswordPath
 ```
 
-### Configure your vault
+### Register and configure your vault
 
 Next you must configure the SecretStore vault. The configuration sets user interaction to None, so that SecretStore never prompts the user. The configuration requires a password, and the password is passed in as a SecureString object. The -Confirm:false parameter is used so that PowerShell does not prompt for confirmation.
 
