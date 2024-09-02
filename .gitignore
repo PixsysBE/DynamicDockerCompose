@@ -6,3 +6,4 @@
 /src/DynamicDockerCompose/.config/CakeRelease.settings.json
 /src/DynamicDockerCompose/.build/CakeRelease/Semantic/node_modules/
 /src/DynamicDockerCompose/node_modules/
+/src/DynamicDockerCompose/.build/CakeRelease/Semantic/Config/.releaserc.js

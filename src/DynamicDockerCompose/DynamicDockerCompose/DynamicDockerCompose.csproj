@@ -4,6 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
+    <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
+    <Deterministic>False</Deterministic>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\..\README.md" Link="README.md">
@@ -24,11 +26,17 @@
     <None Include=".config\Dockerfile" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CakeRelease" Version="2.0.2" />
+    <PackageReference Include="CakeRelease" Version="2.0.3-beta.1.4" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Tools\init.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Target Name="CopyCakeReleaseGitHooks" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <_CustomFiles Include=".\..\.build\CakeRelease\Git\Hooks\commit-msg" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_CustomFiles)" DestinationFolder=".\..\..\..\.git\hooks" />
+  </Target>
 </Project>
