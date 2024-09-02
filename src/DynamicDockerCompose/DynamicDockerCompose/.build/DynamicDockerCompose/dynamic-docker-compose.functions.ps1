@@ -77,6 +77,7 @@ param (
   [string]$variableName,
   [ref]$envFileContent,
   [ref]$collection,
+  [string]$searchFromPath,
   [string]$filter,
   [string]$directory,
   [string]$excludePattern = $null
@@ -100,19 +101,19 @@ if (-not [string]::IsNullOrWhiteSpace($envValue)) {
 
 # Using search parameters
 if (-not [string]::IsNullOrWhiteSpace($filter)) { 
-  Write-Verbose ("[Get-Variable-Absolute-Path] Searching from path: $env:rootAbsolutePath")
+  Write-Verbose ("[Get-Variable-Absolute-Path] Searching from path: $searchFromPath")
   Write-Verbose ("[Get-Variable-Absolute-Path] filter: $filter")
   if (-not [string]::IsNullOrWhiteSpace($directory)) { 
     Write-Verbose ("[Get-Variable-Absolute-Path] directory: $directory")
     if($directory -like "*/*"){
-        $directory = Join-Path -Path $env:rootAbsolutePath -ChildPath $directory | Resolve-Path
+        $directory = Join-Path -Path $searchFromPath -ChildPath $directory | Resolve-Path
         $items = @(Get-ChildItem -Path $directory | Where-Object { $_.FullName.Contains($filter)} | Select-Object FullName)
     } else {
-        $items = Get-ChildItem -Path $env:rootAbsolutePath -Recurse -Directory -Filter $directory  | 
+        $items = Get-ChildItem -Path $searchFromPath -Recurse -Directory -Filter $directory  | 
         ForEach-Object { Get-ChildItem -Path $_.FullName -Filter $filter | Select-Object FullName }
     }
   } else {
-    $items = Get-ChildItem -Path $env:rootAbsolutePath -Recurse -Filter $filter  
+    $items = Get-ChildItem -Path $searchFromPath -Recurse -Filter $filter  
   }
   if ($items.Count -gt 1) {
     if(-not [string]::IsNullOrWhiteSpace($excludePattern) )
@@ -141,16 +142,55 @@ if (-not [string]::IsNullOrWhiteSpace($filter)) {
 .SYNOPSIS
 Gets relative path from an absolute path
 #>
+# function Get-Relative-Path-From-Absolute-Path {
+# param (
+#   [string]$absolutePath,
+#   [string]$fromAbsolutePath
+# )
+# Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] absolutePath: $absolutePath")
+# Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] fromAbsolutePath: $fromAbsolutePath") 
+# $relativePath = $absolutePath -replace [regex]::Escape($fromAbsolutePath), '' -replace '\\', '/'
+# if ($relativePath.StartsWith("/")) { $relativePath = $relativePath.Substring(1) }
+# return $relativePath
+# }
 function Get-Relative-Path-From-Absolute-Path {
-param (
-  [string]$absolutePath,
-  [string]$fromAbsolutePath
-)
-Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] absolutePath: $absolutePath")
-Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] fromAbsolutePath: $fromAbsolutePath") 
-$relativePath = $absolutePath -replace [regex]::Escape($fromAbsolutePath), '' -replace '\\', '/'
-if ($relativePath.StartsWith("/")) { $relativePath = $relativePath.Substring(1) }
-return $relativePath
+  param (
+      [string]$fromPath,    # Chemin absolu du dossier d'origine
+      [string]$toPath       # Chemin absolu du dossier cible
+  )
+
+  Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] fromPath: $fromPath")
+  Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] toPath: $toPath") 
+
+  # Normalise les chemins (supprime les barres obliques inverses finales)
+  $fromPath = (Get-Item -LiteralPath $fromPath).FullName.TrimEnd('\')
+  $toPath = (Get-Item -LiteralPath $toPath).FullName.TrimEnd('\')
+
+  # Sépare les chemins en segments en utilisant le caractère [System.IO.Path]::DirectorySeparatorChar
+  $separator = [System.IO.Path]::DirectorySeparatorChar
+  $fromParts = $fromPath -split [Regex]::Escape($separator)
+  $toParts = $toPath -split [Regex]::Escape($separator)
+
+  # Trouve le premier segment différent entre les deux chemins
+  $commonLength = 0
+  for ($i = 0; $i -lt [math]::Min($fromParts.Length, $toParts.Length); $i++) {
+      if ($fromParts[$i] -ne $toParts[$i]) {
+          break
+      }
+      $commonLength++
+  }
+
+  # Nombre de ".." à ajouter pour remonter dans l'arborescence depuis le dossier d'origine
+  $upCount = $fromParts.Length - $commonLength
+  $relativePath = (".." + $separator) * $upCount
+
+  # Ajoute les segments du chemin cible restants
+  $relativePath += ($toParts[$commonLength..($toParts.Length - 1)] -join $separator)
+
+  # Retire la barre oblique inverse finale si elle est présente
+  $trimmedRelativePath = $relativePath.TrimEnd($separator)
+
+  return ".\${trimmedRelativePath}"
 }
 
 <#

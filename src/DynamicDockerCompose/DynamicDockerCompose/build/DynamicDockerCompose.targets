@@ -1,0 +1,69 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="DynamicDockerComposeRunConfigPowerShellScript" BeforeTargets="Build">
+    <PropertyGroup>
+      <PSScriptPath>$(MSBuildThisFileDirectory)..\tools\config.ps1</PSScriptPath>
+      <IsRunningOnWindows Condition="'$(OS)' == 'Windows_NT'">true</IsRunningOnWindows>
+      <PowerShellCmd Condition="'$(IsRunningOnWindows)' == 'true'">powershell</PowerShellCmd>
+      <PowerShellCmd Condition="'$(IsRunningOnWindows)' != 'true'">pwsh</PowerShellCmd>
+    </PropertyGroup>
+    <Exec Command="$(PowerShellCmd) -ExecutionPolicy Bypass -File $(PSScriptPath) -MSBuildThisFileDirectory $(MSBuildThisFileDirectory) -MSBuildProjectDirectory $(MSBuildProjectDirectory) -MSBuildProjectName $(MSBuildProjectName) -MSBuildProjectFile $(MSBuildProjectFile)" />
+  </Target>
+  <Target Name="DynamicDockerComposeCopyFiles" BeforeTargets="Build">
+    <PropertyGroup>
+      <LauncherSource>$(MSBuildThisFileDirectory)..\tools\launcher.ps1</LauncherSource>
+      <LauncherTarget>$(MSBuildProjectDirectory)\..\.build\DynamicDockerCompose\dynamic-docker-compose.ps1</LauncherTarget>
+      <ConfigSourceFolder>$(MSBuildThisFileDirectory)..\.config\</ConfigSourceFolder>
+      <ConfigTargetFolder>$(MSBuildProjectDirectory)\..\.config\</ConfigTargetFolder>
+      <BuildScriptsSourceFolder>$(MSBuildThisFileDirectory)..\.build\DynamicDockerCompose\Scripts\</BuildScriptsSourceFolder>
+      <BuildScriptsTargetFolder>$(MSBuildProjectDirectory)\..\.build\DynamicDockerCompose\Scripts\</BuildScriptsTargetFolder>
+    </PropertyGroup>
+
+    <!-- <Message Text="Config Source: $(ConfigSourceFolder)" Importance="high" />
+    <Message Text="Config Destination: $(ConfigTargetFolder)" Importance="high" /> -->
+
+    <ItemGroup>
+      <ConfigFiles Include="$(ConfigSourceFolder)**\*.*" 
+                   Exclude="$(ConfigSourceFolder)**\docker-dev.sample.env" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <SampleFile Include="$(ConfigSourceFolder)**\docker-dev.sample.env" />
+    </ItemGroup>
+
+    <Message Text="BuildScriptsSourceFolder: $(BuildScriptsSourceFolder)" Importance="high" />
+    <Message Text="BuildScriptsTargetFolder: $(BuildScriptsTargetFolder)" Importance="high" />
+    
+    <ItemGroup>
+      <ScriptsFiles Include="$(BuildScriptsSourceFolder)**\*.*" />
+    </ItemGroup>
+
+    <Copy
+    SourceFiles="$(LauncherSource)"
+    DestinationFiles="$(LauncherTarget)"
+    SkipUnchangedFiles="false"
+    OverwriteReadOnlyFiles="true"   
+    />
+
+    <Copy
+      SourceFiles="@(ConfigFiles)"
+      DestinationFolder="$(ConfigTargetFolder)"
+	    SkipUnchangedFiles="true"
+      OverwriteReadOnlyFiles="false"
+      Condition="!Exists('$(ConfigTargetFolder)%(RecursiveDir)%(Filename)%(Extension)')"  
+    />
+
+    <Copy
+      SourceFiles="@(SampleFile)"
+      DestinationFolder="$(ConfigTargetFolder)"
+      SkipUnchangedFiles="false"
+      OverwriteReadOnlyFiles="true"  
+    />
+
+    <Copy
+      SourceFiles="@(ScriptsFiles)"
+      DestinationFolder="$(BuildScriptsTargetFolder)"
+      SkipUnchangedFiles="false"
+      OverwriteReadOnlyFiles="true"  
+    />
+  </Target>
+</Project>

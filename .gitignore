@@ -3,3 +3,4 @@
 /src/DynamicDockerCompose/DynamicDockerCompose/obj/
 /src/DynamicDockerCompose/.build/CakeRelease/Cake/tools/
 /src/DynamicDockerCompose/.build/CakeRelease/Semantic/Artifacts/
+/src/DynamicDockerCompose/.config/CakeRelease.settings.json

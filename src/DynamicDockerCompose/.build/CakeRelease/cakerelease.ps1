@@ -1,4 +1,10 @@
+[CmdletBinding()]
 param (
+	# Parameters 
+    [string]$projectName,
+
+
+	# Parameters used in packaged cake release script
 	[string]$securePasswordPath,
 	[string]$vault,
 	[switch]$publishToNuget,
@@ -11,70 +17,39 @@ param (
 
 $ErrorActionPreference = 'Stop'
 
+# Directory where the script is called
 $currentDirectory = Get-Location
-$cakeReleaseDirectory = $PSScriptRoot
+# Directory containing launcher (cakerelease.ps1)
+$launcherScriptDirectory = $PSScriptRoot
 
-# Import variables and scripts
-$scriptsFolder = ".\Powershell\"
-. (Join-Path -Path $PSScriptRoot -ChildPath "${scriptsFolder}cakerelease.functions.ps1")
-. (Join-Path -Path $PSScriptRoot -ChildPath "${scriptsFolder}cakerelease.settings.ps1")
-
-# Set location to cakeReleaseDirectory because PSScriptRoot changed due to the imported scripts not in the same folder
-Set-Location -LiteralPath $cakeReleaseDirectory
-
-# Ensure script required variables exist
-$securePasswordPath = Confirm-String-Parameter -param $securePasswordPath -prompt "Please enter the secure password path" 
-$vault = Confirm-String-Parameter -param $vault -prompt "Please enter the vault name" 
-
-# Unlock secret store to get secrets
-$password = Import-CliXml -Path $securePasswordPath
-Unlock-SecretStore -Password $password
-$env:GH_TOKEN = Get-Secret -Name GH_TOKEN -Vault $vault -AsPlainText
-
-$env:NUGET_TOKEN = "notoken"
-if($publishToNuget.IsPresent){
-	$env:NUGET_TOKEN = Get-Secret -Name NUGET_TOKEN -Vault $vault -AsPlainText
-	if([string]::IsNullOrWhiteSpace($env:NUGET_TOKEN)){
-		Write-Host "Nuget Api key has not been defined, please update your vault with a NUGET_TOKEN secret"
-		exit 1
+# Get Cake Release settings
+$projectSettingsPath = (Join-Path -Path $launcherScriptDirectory -ChildPath "../../.config/CakeRelease.settings.json") | Resolve-Path
+if (Test-Path -Path $projectSettingsPath) {
+	try {
+		$jsonContent = Get-Content -Path $projectSettingsPath -Raw | ConvertFrom-Json
+		$objectList = @($jsonContent)
+	} catch {
+		Write-Host "Error while reading JSON file: $_" -ForegroundColor Red
+		return
 	}
+	if($objectList.Count -eq 1){
+		$projectSettings = $objectList[0]
+	}
+	else {
+		$projectSettings = $objectList | Where-Object { $_.Name -eq $projectName}
+	}
+    if ($projectSettings) {       
+        Write-Verbose "Settings found with name $($projectSettings.Name)"
+        $cakeReleaseScriptPath = (Join-Path -Path $projectSettings.PackageDirectory -ChildPath ".build/CakeRelease/cakerelease.ps1") | Resolve-Path
+        Write-Verbose "cakeReleaseScriptPath: $cakeReleaseScriptPath"
+		# Launch Cake Release script located in package
+        & $cakeReleaseScriptPath -launcherScriptDirectory $launcherScriptDirectory -securePasswordPath $securePasswordPath -vault $vault -publishToNuget:$publishToNuget -publishToSource $publishToSource -createGithubRelease:$createGithubRelease -autoBuild:$autoBuild -csprojPath $csprojPath -nuspecFilePath $nuspecFilePath
+    } else {
+        Write-Host "Settings not found with name $projectName. Please specify your project name (You can check your settings here : $projectSettingsPath)" -ForegroundColor Red
+    }    
+} else {
+    Write-Host "Settings not found at $projectSettingsPath" -ForegroundColor Red
 }
 
-# Additional environments variables
-$env:PUBLISH_PACKAGE_TO_NUGET_SOURCE = Format-With-Double-Backslash -string $publishToSource
-
-# Ensure .nuspec has all the properties needed
-$nuspecProperties = Confirm-Nuspec-Properties -filePath $nuspecFilePath
-
-# Ensure package.json has all the properties needed
-$packageJsonProperties = Confirm-Package-Json-Properties -filePath $packageJsonPath -packageId $nuspecProperties.Id
-
-# Git Hooks
-$csprojPath = Get-Csproj-Path -csprojPath $csprojPath
-Copy-Git-Hooks -filePath $csprojPath -includePath $csprojTargetGitHooksCommitMsgPath -destinationFolder $csprojTargetGitHooksCommitMsgDestinationFolder
-
-# Ensure csproj has all the properties needed
-Confirm-csproj-properties -filePath $csprojPath
-
-# Create Semantic release config file based on parameters
-$releaseConfig = (Get-Content -Path $mainConfigPath) -replace "{%GITHUB%}", $githubConfig
-$releaseConfig = $releaseConfig -replace "{%NUGET%}", $nugetConfig
-Out-File -FilePath $releaseConfigPath -InputObject $releaseConfig -encoding UTF8
-
-# Cake build
-Set-Location -LiteralPath $cakePath
-
-dotnet tool restore
-if ($LASTEXITCODE -ne 0) { 
-	Set-Location -LiteralPath $currentDirectory	
-	exit $LASTEXITCODE 
-}
-
-dotnet cake --projectName $nuspecProperties.Id --rootPath $rootPath --projectPath (Split-Path -Parent $csprojPath) --buildPath $buildPath --nuspecFilePath $nuspecFilePath --changelogVersion $packageJsonProperties.changelogVersion --execVersion $packageJsonProperties.execVersion --gitVersion $packageJsonProperties.gitVersion --semanticReleaseVersion $packageJsonProperties.semanticReleaseVersion
-
-if ($LASTEXITCODE -ne 0) { 
-	Set-Location -LiteralPath $currentDirectory
-	exit $LASTEXITCODE 
-}
 
 Set-Location -LiteralPath $currentDirectory

@@ -9,7 +9,7 @@ services:
         - CSPROJ_PATH=${CSPROJ_PATH}
         - SLN_PATH=${SLN_PATH}
         - SOLUTION_NAME=${SOLUTION_NAME} 
-        - ENTRYPOINT_SCRIPT_PATH=${ENTRYPOINT_SCRIPT_PATH}
+        - ENTRYPOINT_SCRIPT_PATH=${ENTRYPOINT_SCRIPT_PATH}        
     ports:
       - "${HTTP_PORT}:8080"
       - "${HTTPS_PORT}:443"
