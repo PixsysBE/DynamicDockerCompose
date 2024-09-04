@@ -5,7 +5,7 @@
     <title>Dynamic Docker Compose</title>
     <description>Dynamic Docker Compose allows you to dynamically retrieve values of your custom variables before passing them to Docker Compose</description>
     <authors>Sylvain Signore</authors>
-    <version>0.0.0.0</version>
+    <version>1.3.2.0</version>
     <readme>README.md</readme>
     <projectUrl>https://github.com/PixsysBE/DynamicDockerCompose</projectUrl>
   </metadata>
