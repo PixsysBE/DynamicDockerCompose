@@ -26,7 +26,7 @@
     <None Include=".config\Dockerfile" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CakeRelease" Version="2.0.3-beta.1.4" />
+    <PackageReference Include="CakeRelease" Version="2.1.1" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Tools\init.ps1">

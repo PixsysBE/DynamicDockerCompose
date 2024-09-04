@@ -7,3 +7,4 @@
 /src/DynamicDockerCompose/.build/CakeRelease/Semantic/node_modules/
 /src/DynamicDockerCompose/node_modules/
 /src/DynamicDockerCompose/.build/CakeRelease/Semantic/Config/.releaserc.js
+/src/DynamicDockerCompose/.build/CakeRelease/Semantic/package-lock.json
