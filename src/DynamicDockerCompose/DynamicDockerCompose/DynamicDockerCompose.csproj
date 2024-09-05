@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -26,7 +26,7 @@
     <None Include=".config\Dockerfile" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CakeRelease" Version="2.1.1" />
+    <PackageReference Include="CakeRelease" Version="2.1.2" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Tools\init.ps1">
