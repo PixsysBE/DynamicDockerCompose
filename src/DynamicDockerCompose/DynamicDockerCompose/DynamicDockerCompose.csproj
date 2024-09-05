@@ -28,11 +28,6 @@
   <ItemGroup>
     <PackageReference Include="CakeRelease" Version="2.1.2" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="Tools\init.ps1">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <Target Name="CopyCakeReleaseGitHooks" AfterTargets="AfterBuild">
     <ItemGroup>
       <_CustomFiles Include=".\..\.build\CakeRelease\Git\Hooks\commit-msg" />
