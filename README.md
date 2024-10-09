@@ -89,8 +89,6 @@ HTTP_PORT=8006
 HTTPS_PORT=8007
 ENV=docker-dev
 TAG=local
-secretstore_password_path=C:\Automation\secretstorepasswd.xml
-secretstore_vault_name=MyVaultName
 ROOT_PATH=../../../../../ # your solution folder
 ```
 
@@ -112,100 +110,10 @@ If needed variables are not defined by one of the two first methods, it will sta
 |csproj Path|CSPROJ_PATH|"./**/*.csproj"| The path to your .csproj
 |sln Path|SLN_PATH|"./*.sln"| The path to your .sln
 |Entrypoint Script Path|ENTRYPOINT_SCRIPT_PATH|"./.build/DynamicDockerCompose/Scripts/entrypoint.sh"| The path to the entrypoint shell bash
-|Certificate Path|CERTIFICATE_PATH|SecretStore|The path to your valid HTTPS certificate
-|Certificate Password|CERTIFICATE_PASSWORD|SecretStore|The HTTPS certificate password
 
 ## Local certificates for development purposes
 
-If you don't already have one, create your trusted HTTPS development certificate:
-
-```powershell
-
-  PM > dotnet dev-certs https --clean
-  //Cleaning HTTPS development certificates from the machine. A prompt might get displayed to confirm the removal of some of the certificates.
-  //HTTPS development certificates successfully removed from the machine.
-
-  PM > dotnet dev-certs https -ep $env:USERPROFILE\.aspnet\https\aspnetapp.pfx --trust
-  //Trusting the HTTPS development certificate was requested.A confirmation prompt will be displayed if the certificate was not previously trusted.Click yes on the prompt to trust the certificate.
-  //Successfully created and trusted a new HTTPS certificate.
-
-  PM > dotnet dev-certs https --check
-  //A valid certificate was found: C40087E6CA2F2A811F3BF78E3C5FE6BA8FA2XXXX - CN = localhost - Valid from 2023 - 01 - 27 23:21:10Z to 2024 - 01 - 27 23:21:10Z - IsHttpsDevelopmentCertificate: true - IsExportable: true
-  //Run the command with both--check and --trust options to ensure that the certificate is not only valid but also trusted.
-
-```
-
-## Securing HTTPS certificate properties
-
-Once the certificate is created, we will store its path and password as secrets in the PowerShell [SecretManagement and SecretStore](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules) modules.
-
-> More info available here : [Use the SecretStore in automation](https://learn.microsoft.com/en-us/powershell/utility-modules/secretmanagement/how-to/using-secrets-in-automation?view=ps-modules)
-
-```powershell
-Install-Module -Name Microsoft.PowerShell.SecretStore -Repository PSGallery -Force
-Install-Module -Name Microsoft.PowerShell.SecretManagement -Repository PSGallery -Force
-Import-Module Microsoft.PowerShell.SecretStore
-Import-Module Microsoft.PowerShell.SecretManagement
-```
- Get the identification information of the username 'SecureStore':
-
-```powershell
-PS> $credential = Get-Credential -UserName 'SecureStore'
-
-PowerShell credential request
-Enter your credentials.
-Password for user SecureStore: **************
-```
-
-Once you set the password you can export it to an XML file, encrypted by Windows Data Protection (DPAPI).
-
-```powershell
-$securePasswordPath = 'C:\Automation\securestorepasswd.xml'
-$credential.Password |  Export-Clixml -Path $securePasswordPath
-```
-
-### Register and configure your vault
-
-Next you must configure the SecretStore vault. The configuration sets user interaction to None, so that SecretStore never prompts the user. The configuration requires a password, and the password is passed in as a SecureString object. The -Confirm:false parameter is used so that PowerShell does not prompt for confirmation.
-
-```powershell
-Register-SecretVault -Name YourVaultName -ModuleName Microsoft.PowerShell.SecretStore
-$password = Import-CliXml -Path $securePasswordPath
-
-$storeConfiguration = @{
-    Authentication = 'Password'
-    PasswordTimeout = 3600 # 1 hour
-    Interaction = 'None'
-    Password = $password
-    Confirm = $false
-}
-Set-SecretStoreConfiguration @storeConfiguration
-```
-
-Set your secrets
-
-```powershell
-Unlock-SecretStore -Password $password
-Set-Secret -Name CERTIFICATE_PATH -Secret "/root/.aspnet/https/aspnetapp.pfx" -Vault YourVaultName -Metadata @{Purpose="Certificate Path"}	
-Set-Secret -Name CERTIFICATE_PASSWORD -Secret "Password1" -Vault YourVaultName -Metadata @{Purpose="Certificate Password"}	
-```
-
-To get the list of all of your secrets, you can run:
-```powershell
-Get-SecretInfo -Name CERTIFICATE_PATH  -Vault YourVaultName  | Select Name, Type, VaultName, Metadata
-```
-To remove your vault, run:
-```powershell
-Unregister-SecretVault -Name YourVaultName
-```
-
-Then, reference the secret store password location and the vault name in the .env file [as showed above](#setting-up-your-environment-file):
-```
-secretstore_password_path=C:\Automation\securestorepasswd.xml
-secretstore_vault_name=YourVaultName
-```
-
-The script will try to unlock the specified vault with the provided password to get the HTTPS certificate path and password.
+I recommend using [DockerMkcertForLocalSSL](https://github.com/PixsysBE/DockerMkcertForLocalSSL) to easily take care of local SSL certificates. Copy/Paste the required files into the .config folder and follow instructions from the installation section.
 
 ## Compose your application
 > Make sure Docker Desktop is running first

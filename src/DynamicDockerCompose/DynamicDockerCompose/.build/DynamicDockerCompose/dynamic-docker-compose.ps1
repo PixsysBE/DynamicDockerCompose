@@ -85,19 +85,7 @@ if($template -eq "dotnet-webapp")
     $csprojPath = Get-Variable-Absolute-Path -variableName "CSPROJ_PATH" -filter "*.csproj" -searchFromPath $env:rootAbsolutePath -excludePattern ".Tests.csproj" 
     Add-Variable-To-Collection -name "CSPROJ_PATH" -value ( Get-Relative-Path-From-Absolute-Path -fromPath $env:rootAbsolutePath -toPath $csprojPath) -collection ([ref]$variables)  
     $entrypointScriptPath = Get-Variable-Absolute-Path -variableName "ENTRYPOINT_SCRIPT_PATH" -filter "entrypoint.sh" -searchFromPath $env:rootAbsolutePath -Directory "**/.build/DynamicDockerCompose/Scripts" -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
-    # Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value $entrypointScriptPath -collection ([ref]$variables)  
-    Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -fromPath $env:rootAbsolutePath -toPath $entrypointScriptPath) -collection ([ref]$variables)  
-    $secretstorePasswordPath = Get-Variable-Absolute-Path -variableName "secretstore_password_path" -searchFromPath $env:rootAbsolutePath -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
-    Add-Variable-To-Collection -name "secretstore_password_path" -value $secretstorePasswordPath -collection ([ref]$variables)  
-    $secretstoreVaultName = Get-Variable-Absolute-Path -variableName "secretstore_vault_name" -searchFromPath $env:rootAbsolutePath -collection ([ref]$variables) -envFileContent ([ref]$envFileContent)
-    Add-Variable-To-Collection -name "secretstore_vault_name" -value $secretstoreVaultName -collection ([ref]$variables)  
-    if ((-not [string]::IsNullOrWhiteSpace($secretstorePasswordPath)) -and (-not [string]::IsNullOrWhiteSpace($secretstorePasswordPath))) {
-        # Unlock secret store to get secrets
-        $secretstorePassword = Import-CliXml -Path $secretstorePasswordPath
-        Unlock-SecretStore -Password $secretstorePassword
-        Add-Variable-To-Collection -name CERTIFICATE_PATH -value (Get-Secret -Name CERTIFICATE_PATH -Vault $secretstoreVaultName -AsPlainText) -collection ([ref]$variables)  
-        Add-Variable-To-Collection -name CERTIFICATE_PASSWORD -value (Get-Secret -Name CERTIFICATE_PASSWORD -Vault $secretstoreVaultName -AsPlainText) -collection ([ref]$variables)  
-    }
+    Add-Variable-To-Collection -name "ENTRYPOINT_SCRIPT_PATH" -value (  Get-Relative-Path-From-Absolute-Path -fromPath $env:rootAbsolutePath -toPath $entrypointScriptPath -invertSlashs) -collection ([ref]$variables)  
 }
 
 if($list.IsPresent){ 

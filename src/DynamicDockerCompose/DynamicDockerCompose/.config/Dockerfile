@@ -23,7 +23,7 @@ COPY --from=publish /app/publish .
 
 # Copy and make executable the endpoint shell script
 ARG ENTRYPOINT_SCRIPT_PATH
-COPY ${ENTRYPOINT_SCRIPT_PATH} "./entrypoint.sh"
+COPY ["${ENTRYPOINT_SCRIPT_PATH}", "./entrypoint.sh"]
 RUN chmod +x ./entrypoint.sh
 ARG SOLUTION_NAME
 ENV DLLNAME="${SOLUTION_NAME}.dll"

@@ -155,8 +155,9 @@ Gets relative path from an absolute path
 # }
 function Get-Relative-Path-From-Absolute-Path {
   param (
-      [string]$fromPath,    # Chemin absolu du dossier d'origine
-      [string]$toPath       # Chemin absolu du dossier cible
+      [string]$fromPath,    # absolute path to source
+      [string]$toPath,       # absolute path to target
+      [switch]$invertSlashs
   )
 
   Write-Verbose ("[Get-Relative-Path-From-Absolute-Path] fromPath: $fromPath")
@@ -188,9 +189,12 @@ function Get-Relative-Path-From-Absolute-Path {
   $relativePath += ($toParts[$commonLength..($toParts.Length - 1)] -join $separator)
 
   # Retire la barre oblique inverse finale si elle est présente
-  $trimmedRelativePath = $relativePath.TrimEnd($separator)
+  $trimmedRelativePath = ".\" + $relativePath.TrimEnd($separator)
 
-  return ".\${trimmedRelativePath}"
+  if($invertSlashs.IsPresent){
+    return $trimmedRelativePath -replace '\\', '/'
+  }
+  return $trimmedRelativePath
 }
 
 <#

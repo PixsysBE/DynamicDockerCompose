@@ -12,14 +12,5 @@ services:
         - ENTRYPOINT_SCRIPT_PATH=${ENTRYPOINT_SCRIPT_PATH}        
     ports:
       - "${HTTP_PORT}:8080"
-      - "${HTTPS_PORT}:443"
     environment:
-      - ASPNETCORE_URLS=https://+;http://+
-      - ASPNETCORE_HTTP_PORTS=${HTTP_PORT}
-      - ASPNETCORE_HTTPS_PORTS=${HTTPS_PORT}
       - ASPNETCORE_ENVIRONMENT=${ENV}
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERTIFICATE_PATH}
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERTIFICATE_PASSWORD}
-    volumes:
-      - ${APPDATA}\microsoft\UserSecrets\:/root/.microsoft/usersecrets
-      - ${USERPROFILE}\.aspnet\https:/root/.aspnet/https/
